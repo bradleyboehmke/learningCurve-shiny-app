@@ -1,5 +1,5 @@
 ---
-title: "Untitled"
+title: "Learning Curves"
 output: 
   flexdashboard::flex_dashboard:
     orientation: rows
@@ -15,6 +15,8 @@ library(flexdashboard)
 library(shiny)
 library(learningCurve)
 library(ggplot2)
+library(plotly)
+library(DT)
 ```
 
 
@@ -40,7 +42,7 @@ radioButtons("model", "Model:",
 actionButton("goButton", "Compute!")
 
 # create inputs for graphics
-unit_a <- 1
+#unit_a <- as.numeric(input$unit_a)
 time_a <- 100
 unit_b <- 250
 rate <- .9
@@ -54,7 +56,7 @@ subtitle <- paste("Based on", model_title, "with a", paste0(rate*100,"%"), "lear
 
 <br>
 
-Use the __Explore Learning Curves__ tab to explore how differing inputs such as starting unit time, learning rate, and type of learning curve function (Crawford's unit function versus Wright's cummulative average function) influences the time (or cost) predicted for the ending unit. Scroll along the predicted unit-level and cummulative average-level plots to examine predicted time (or cost) for different levels of units produced.  
+Use the __Explore Learning Curves__ tab to explore how differing inputs such as starting unit time, learning rate, and type of learning curve function (Crawford's unit function versus Wright's cummulative average function) influences the time (or cost) predicted for the ending unit. Scroll along the unit- and cummulative-level plots to examine predicted time (or cost) for different levels of units produced.  
 
 To learn more click the __About__ tab.  
 
@@ -71,49 +73,103 @@ Row
 
 ```{r}
 
-renderPlot({
-  plot_unit_curve(t = time_a, m = unit_a, n = unit_b, r = rate, model = model) +
+df <- reactive({
+  if(input$model == "u"){
+    
+  data.frame(Unit = as.numeric(input$unit_a):as.numeric(input$unit_b),
+             Time = unit_curve(t = as.numeric(input$time_a),
+                               m = as.numeric(input$unit_a),
+                               n = as.numeric(input$unit_a):as.numeric(input$unit_b),
+                               r = as.numeric(input$rate)),
+             Cummulative = cumsum(unit_curve(t = as.numeric(input$time_a),
+                                             m = as.numeric(input$unit_a),
+                                             n = as.numeric(input$unit_a):as.numeric(input$unit_b),
+                                             r = as.numeric(input$rate))))
+  } else {
+    
+    data.frame(Unit = as.numeric(input$unit_a):as.numeric(input$unit_b),
+             Time = ca_unit(t = as.numeric(input$time_a),
+                            m = as.numeric(input$unit_a),
+                            n = as.numeric(input$unit_a):as.numeric(input$unit_b),
+                            r = as.numeric(input$rate)),
+             Cummulative = cumsum(ca_unit(t = as.numeric(input$time_a), 
+                                          m = as.numeric(input$unit_a),
+                                          n = as.numeric(input$unit_a):as.numeric(input$unit_b), 
+                                          r = as.numeric(input$rate))))
+  }
+})
+```
+
+
+```{r}
+renderPlotly({
+  p1 <- ggplot(df(), aes(x = Unit, y = Time)) +
+    geom_line() +
     scale_x_continuous("Units Produced", labels = scales::comma) +
-    scale_y_continuous("Time (or Cost)", labels = scales::comma)
+    scale_y_continuous("Per Unit Time (or Cost)", labels = scales::comma)
+  
+  ggplotly(p1)
 })
 ```
 
 ### Cummulative-level Estimates
 
 ```{r}
-renderPlot({
-  plot_unit_curve(t = time_a, m = unit_a, n = unit_b, r = rate, model = model, level = "c") +
+
+renderPlotly({
+  p1 <- ggplot(df(), aes(x = Unit, y = Cummulative)) +
+    geom_line() +
     scale_x_continuous("Units Produced", labels = scales::comma) +
-    scale_y_continuous("Time (or Cost)", labels = scales::comma)
+    scale_y_continuous("Cummulative Time (or Cost)", labels = scales::comma)
 })
 ```
 
 Row
 -----------------------------------------------------------------------
 
-### Starting Unit Number
+### Something here
+
+### Underlying Data
 
 ```{r}
-1
+df.table <- reactive({
+  if(input$model == "u"){
+    
+  data.frame(Unit = as.numeric(input$unit_a):as.numeric(input$unit_b),
+             `Unit Time` = round(unit_curve(t = as.numeric(input$time_a),
+                               m = as.numeric(input$unit_a),
+                               n = as.numeric(input$unit_a):as.numeric(input$unit_b),
+                               r = as.numeric(input$rate)), 0),
+             `Cummulative Time` = round(cumsum(unit_curve(t = as.numeric(input$time_a),
+                                             m = as.numeric(input$unit_a),
+                                             n = as.numeric(input$unit_a):as.numeric(input$unit_b),
+                                             r = as.numeric(input$rate))), 0))
+  } else {
+    
+    data.frame(Unit = as.numeric(input$unit_a):as.numeric(input$unit_b),
+             `Unit Time` = round(ca_unit(t = as.numeric(input$time_a),
+                            m = as.numeric(input$unit_a),
+                            n = as.numeric(input$unit_a):as.numeric(input$unit_b),
+                            r = as.numeric(input$rate)), 0),
+             `Cummulative Time` = round(cumsum(ca_unit(t = as.numeric(input$time_a), 
+                                          m = as.numeric(input$unit_a),
+                                          n = as.numeric(input$unit_a):as.numeric(input$unit_b), 
+                                          r = as.numeric(input$rate))), 0))
+  }
+})
+
+renderDataTable({
+  datatable(df.table(), rownames = FALSE,
+            colnames = c('Unit Number', 'Unit Time', 'Cummulative Time'),
+            options = list(pageLength = 8, dom = 'tip'))
+})
 ```
 
-### Starting Unit Time (or Cost)
 
-```{r}
-100
-```
 
-### Ending Unit Number
 
-```{r}
-250
-```
 
-### Ending Unit Time (or Cost)
 
-```{r}
-90
-```
 
 About
 ======================================================================
