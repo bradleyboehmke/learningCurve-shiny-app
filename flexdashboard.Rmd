@@ -39,19 +39,8 @@ radioButtons("model", "Model:",
              c("Crawford's Unit Learning Curve Function" = "u",
                "Wright's Cumulative Average Learning Curve Function" = "ca"))
 
-actionButton("goButton", "Compute!")
+#actionButton("goButton", "Compute!")
 
-# create inputs for graphics
-#unit_a <- as.numeric(input$unit_a)
-time_a <- 100
-unit_b <- 250
-rate <- .9
-model <- "u"
-
-model_title <- ifelse(model == "u", "Crawford's unit learning curve function", 
-                      "Wright's cumulative average learning curve function")
-
-subtitle <- paste("Based on", model_title, "with a", paste0(rate*100,"%"), "learning rate")
 ```
 
 <br>
@@ -127,7 +116,32 @@ renderPlotly({
 Row
 -----------------------------------------------------------------------
 
-### Something here
+### Model Definition
+
+Crawford's unit learning curve model:
+
+$$y_n = t_m * \left(\frac{n}{m}\right)^b$$
+
+Wright's cummulative average learning curve model:
+
+$$y_{n} = t_{m} * \frac{n^{1+b} - (n-1)^{1+b}}{m^{1+b} - (m-1)^{1+b}}$$
+
+both where
+
+&nbsp;&nbsp;&nbsp;&nbsp; $y_n$ = the time (or cost) required for the nth unit of production <br>
+&nbsp;&nbsp;&nbsp;&nbsp; $t_{m}$ = time (or cost) required for the mth unit of production <br> 
+&nbsp;&nbsp;&nbsp;&nbsp; *m* = mth unit of production <br>
+&nbsp;&nbsp;&nbsp;&nbsp; *n* = nth unit you wish to predict the time (or cost) for <br>
+&nbsp;&nbsp;&nbsp;&nbsp; *b* = natural slope of the learning curve rate <br>
+
+
+To compute *b* for a given learning rate:
+  
+$$b = \frac{log(r)}{log(2)}$$
+
+
+
+
 
 ### Underlying Data
 
